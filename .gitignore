@@ -52,8 +52,6 @@ xcuserdata
 cmake-build-debug/
 
 # User
-*.dll
-*.exe
 *.pdb
 *.rar
 vcpkg_installed/
