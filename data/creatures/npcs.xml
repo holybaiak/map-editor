@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<npcs>
+	<npc name="Addoner" looktype="472" lookitem="0" lookaddon="1" lookhead="59" lookbody="114" looklegs="0" lookfeet="94" />
+	<npc name="Archery" looktype="683" lookitem="0" lookaddon="0" lookhead="97" lookbody="0" looklegs="96" lookfeet="114" />
+	<npc name="Banker" looktype="328" lookitem="0" lookaddon="0" lookhead="95" lookbody="114" looklegs="98" lookfeet="97" />
+	<npc name="Equipment Saleswoman" looktype="155" lookitem="0" lookaddon="1" lookhead="95" lookbody="21" looklegs="23" lookfeet="114" />
+	<npc name="Food Vendor" looktype="140" lookitem="0" lookaddon="0" lookhead="114" lookbody="3" looklegs="72" lookfeet="16" />
+	<npc name="Furniture Trader" looktype="128" lookitem="0" lookaddon="0" lookhead="95" lookbody="2" looklegs="2" lookfeet="57" />
+	<npc name="Imbuement Assistant" looktype="141" lookitem="0" lookaddon="3" lookhead="41" lookbody="72" looklegs="39" lookfeet="96" />
+	<npc name="Jeweler" looktype="472" lookitem="0" lookaddon="0" lookhead="116" lookbody="114" looklegs="95" lookfeet="78" />
+	<npc name="Loot Assistant" looktype="1575" lookitem="0" lookaddon="2" lookhead="96" lookbody="101" looklegs="120" lookfeet="120" />
+	<npc name="Magic Merchant" looktype="130" lookitem="0" lookaddon="3" lookhead="0" lookbody="79" looklegs="90" lookfeet="117" />
+	<npc name="Mailwoman" looktype="1537" lookitem="0" lookaddon="0" lookhead="95" lookbody="62" looklegs="0" lookfeet="79" />
+	<npc name="Task Manager" looktype="144" lookitem="0" lookaddon="3" lookhead="116" lookbody="78" looklegs="94" lookfeet="78" />
+	<npc name="Walter Jaeger" looktype="957" lookitem="0" lookaddon="0" lookhead="78" lookbody="5" looklegs="5" lookfeet="115" />
+	<npc name="Golden Merchant" looktype="471" lookitem="0" lookaddon="2" lookhead="0" lookbody="57" looklegs="0" lookfeet="68" />
+	<npc name="Silver Merchant" looktype="128" lookitem="0" lookaddon="3" lookhead="114" lookbody="0" looklegs="76" lookfeet="94" />
+	<npc name="Event Merchant" looktype="1680" lookitem="0" lookaddon="3" lookhead="114" lookbody="0" looklegs="76" lookfeet="94" />
+	<npc name="Alfa Test" looktype="1680" lookitem="0" lookaddon="3" lookhead="114" lookbody="0" looklegs="76" lookfeet="94" />
+</npcs>
