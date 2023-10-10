@@ -28,6 +28,7 @@ const wxString MainToolBar::STANDARD_BAR_NAME = "standard_toolbar";
 const wxString MainToolBar::BRUSHES_BAR_NAME = "brushes_toolbar";
 const wxString MainToolBar::POSITION_BAR_NAME = "position_toolbar";
 const wxString MainToolBar::SIZES_BAR_NAME = "sizes_toolbar";
+const wxString MainToolBar::INDICATORS_BAR_NAME = "indicators_toolbar";
 
 #define loadPNGFile(name) _wxGetBitmapFromMemory(name, sizeof(name))
 inline wxBitmap* _wxGetBitmapFromMemory(const unsigned char* data, int length)
@@ -101,11 +102,11 @@ MainToolBar::MainToolBar(wxWindow* parent, wxAuiManager* manager)
 
 	position_toolbar = newd wxAuiToolBar(parent, TOOLBAR_POSITION, wxDefaultPosition, wxDefaultSize, wxAUI_TB_DEFAULT_STYLE | wxAUI_TB_HORZ_TEXT);
 	position_toolbar->SetToolBitmapSize(icon_size);
-	x_control = newd NumberTextCtrl(position_toolbar, wxID_ANY, 0, 0, MAP_MAX_WIDTH, wxTE_PROCESS_ENTER, "X", wxDefaultPosition, FROM_DIP(parent, wxSize(60, 20)));
+	x_control = newd NumberTextCtrl(position_toolbar, wxID_ANY, 0, 0, rme::MapMaxWidth, wxTE_PROCESS_ENTER, "X", wxDefaultPosition, FROM_DIP(parent, wxSize(60, 20)));
 	x_control->SetToolTip("X Coordinate");
-	y_control = newd NumberTextCtrl(position_toolbar, wxID_ANY, 0, 0, MAP_MAX_HEIGHT, wxTE_PROCESS_ENTER, "Y", wxDefaultPosition, FROM_DIP(parent, wxSize(60, 20)));
+	y_control = newd NumberTextCtrl(position_toolbar, wxID_ANY, 0, 0, rme::MapMaxHeight, wxTE_PROCESS_ENTER, "Y", wxDefaultPosition, FROM_DIP(parent, wxSize(60, 20)));
 	y_control->SetToolTip("Y Coordinate");
-	z_control = newd NumberTextCtrl(position_toolbar, wxID_ANY, 0, 0, MAP_MAX_LAYER, wxTE_PROCESS_ENTER, "Z", wxDefaultPosition, FROM_DIP(parent, wxSize(35, 20)));
+	z_control = newd NumberTextCtrl(position_toolbar, wxID_ANY, 0, 0, rme::MapMaxLayer, wxTE_PROCESS_ENTER, "Z", wxDefaultPosition, FROM_DIP(parent, wxSize(35, 20)));
 	z_control->SetToolTip("Z Coordinate");
 	go_button = newd wxButton(position_toolbar, TOOLBAR_POSITION_GO, wxEmptyString, wxDefaultPosition, FROM_DIP(parent, wxSize(22, 20)));
 	go_button->SetBitmap(go_bitmap);
@@ -142,10 +143,25 @@ MainToolBar::MainToolBar(wxWindow* parent, wxAuiManager* manager)
 	sizes_toolbar->ToggleTool(TOOLBAR_SIZES_RECTANGULAR, true);
 	sizes_toolbar->ToggleTool(TOOLBAR_SIZES_1, true);
 
+	wxBitmap hooks_bitmap = wxArtProvider::GetBitmap(ART_HOOKS_TOOLBAR, wxART_TOOLBAR, icon_size);
+	wxBitmap pickupables_bitmap = wxArtProvider::GetBitmap(ART_PICKUPABLE_TOOLBAR, wxART_TOOLBAR, icon_size);
+	wxBitmap moveables_bitmap = wxArtProvider::GetBitmap(ART_MOVEABLE_TOOLBAR, wxART_TOOLBAR, icon_size);
+
+	indicators_toolbar = newd wxAuiToolBar(parent, TOOLBAR_INDICATORS, wxDefaultPosition, wxDefaultSize, wxAUI_TB_DEFAULT_STYLE);
+	indicators_toolbar->SetToolBitmapSize(icon_size);
+	indicators_toolbar->AddTool(TOOLBAR_HOOKS, wxEmptyString, hooks_bitmap, wxNullBitmap, wxITEM_CHECK, "Wall Hooks", wxEmptyString, NULL);
+	indicators_toolbar->AddTool(TOOLBAR_PICKUPABLES, wxEmptyString, pickupables_bitmap, wxNullBitmap, wxITEM_CHECK, "Pickupables", wxEmptyString, NULL);
+	indicators_toolbar->AddTool(TOOLBAR_MOVEABLES, wxEmptyString, moveables_bitmap, wxNullBitmap, wxITEM_CHECK, "Moveables", wxEmptyString, NULL);
+	indicators_toolbar->Realize();
+	indicators_toolbar->ToggleTool(TOOLBAR_HOOKS, g_settings.getBoolean(Config::SHOW_WALL_HOOKS));
+	indicators_toolbar->ToggleTool(TOOLBAR_PICKUPABLES, g_settings.getBoolean(Config::SHOW_PICKUPABLES));
+	indicators_toolbar->ToggleTool(TOOLBAR_MOVEABLES, g_settings.getBoolean(Config::SHOW_MOVEABLES));
+
 	manager->AddPane(standard_toolbar, wxAuiPaneInfo().Name(STANDARD_BAR_NAME).ToolbarPane().Top().Row(1).Position(1).Floatable(false));
 	manager->AddPane(brushes_toolbar, wxAuiPaneInfo().Name(BRUSHES_BAR_NAME).ToolbarPane().Top().Row(1).Position(2).Floatable(false));
 	manager->AddPane(position_toolbar, wxAuiPaneInfo().Name(POSITION_BAR_NAME).ToolbarPane().Top().Row(1).Position(4).Floatable(false));
 	manager->AddPane(sizes_toolbar, wxAuiPaneInfo().Name(SIZES_BAR_NAME).ToolbarPane().Top().Row(1).Position(3).Floatable(false));
+	manager->AddPane(indicators_toolbar, wxAuiPaneInfo().Name(INDICATORS_BAR_NAME).ToolbarPane().Top().Row(1).Position(5).Floatable(false));
 
 	standard_toolbar->Bind(wxEVT_COMMAND_MENU_SELECTED, &MainToolBar::OnStandardButtonClick, this);
 	brushes_toolbar->Bind(wxEVT_COMMAND_MENU_SELECTED, &MainToolBar::OnBrushesButtonClick, this);
@@ -157,6 +173,7 @@ MainToolBar::MainToolBar(wxWindow* parent, wxAuiManager* manager)
 	z_control->Bind(wxEVT_KEY_UP, &MainToolBar::OnPositionKeyUp, this);
 	go_button->Bind(wxEVT_BUTTON, &MainToolBar::OnPositionButtonClick, this);
 	sizes_toolbar->Bind(wxEVT_COMMAND_MENU_SELECTED, &MainToolBar::OnSizesButtonClick, this);
+	indicators_toolbar->Bind(wxEVT_COMMAND_MENU_SELECTED, &MainToolBar::OnIndicatorsButtonClick, this);
 
 	HideAll();
 }
@@ -173,14 +190,15 @@ MainToolBar::~MainToolBar()
 	z_control->Unbind(wxEVT_KEY_UP, &MainToolBar::OnPositionKeyUp, this);
 	go_button->Unbind(wxEVT_BUTTON, &MainToolBar::OnPositionButtonClick, this);
 	sizes_toolbar->Unbind(wxEVT_COMMAND_MENU_SELECTED, &MainToolBar::OnSizesButtonClick, this);
+	indicators_toolbar->Unbind(wxEVT_COMMAND_MENU_SELECTED, &MainToolBar::OnIndicatorsButtonClick, this);
 }
 
 void MainToolBar::UpdateButtons()
 {
 	Editor* editor = g_gui.GetCurrentEditor();
-	if (editor) {
-		standard_toolbar->EnableTool(wxID_UNDO, editor->actionQueue->canUndo());
-		standard_toolbar->EnableTool(wxID_REDO, editor->actionQueue->canRedo());
+	if(editor) {
+		standard_toolbar->EnableTool(wxID_UNDO, editor->canUndo());
+		standard_toolbar->EnableTool(wxID_REDO, editor->canRedo());
 		standard_toolbar->EnableTool(wxID_PASTE, editor->copybuffer.canPaste());
 	} else {
 		standard_toolbar->EnableTool(wxID_UNDO, false);
@@ -195,6 +213,7 @@ void MainToolBar::UpdateButtons()
 	standard_toolbar->EnableTool(wxID_SAVEAS, is_host);
 	standard_toolbar->EnableTool(wxID_CUT, has_map);
 	standard_toolbar->EnableTool(wxID_COPY, has_map);
+	standard_toolbar->Refresh();
 
 	brushes_toolbar->EnableTool(PALETTE_TERRAIN_OPTIONAL_BORDER_TOOL, has_map);
 	brushes_toolbar->EnableTool(PALETTE_TERRAIN_ERASER, has_map);
@@ -208,6 +227,7 @@ void MainToolBar::UpdateButtons()
 	brushes_toolbar->EnableTool(PALETTE_TERRAIN_QUEST_DOOR, has_map);
 	brushes_toolbar->EnableTool(PALETTE_TERRAIN_HATCH_DOOR, has_map);
 	brushes_toolbar->EnableTool(PALETTE_TERRAIN_WINDOW_DOOR, has_map);
+	brushes_toolbar->Refresh();
 
 	position_toolbar->EnableTool(TOOLBAR_POSITION_GO, has_map);
 	x_control->Enable(has_map);
@@ -228,6 +248,7 @@ void MainToolBar::UpdateButtons()
 	sizes_toolbar->EnableTool(TOOLBAR_SIZES_5, has_map);
 	sizes_toolbar->EnableTool(TOOLBAR_SIZES_6, has_map);
 	sizes_toolbar->EnableTool(TOOLBAR_SIZES_7, has_map);
+	sizes_toolbar->Refresh();
 }
 
 void MainToolBar::UpdateBrushButtons()
@@ -260,6 +281,15 @@ void MainToolBar::UpdateBrushButtons()
 		brushes_toolbar->ToggleTool(PALETTE_TERRAIN_HATCH_DOOR, false);
 		brushes_toolbar->ToggleTool(PALETTE_TERRAIN_WINDOW_DOOR, false);
 	}
+	g_gui.GetAuiManager()->Update();
+}
+
+void MainToolBar::UpdateIndicators()
+{
+	indicators_toolbar->ToggleTool(TOOLBAR_HOOKS, g_settings.getBoolean(Config::SHOW_WALL_HOOKS));
+	indicators_toolbar->ToggleTool(TOOLBAR_PICKUPABLES, g_settings.getBoolean(Config::SHOW_PICKUPABLES));
+	indicators_toolbar->ToggleTool(TOOLBAR_MOVEABLES, g_settings.getBoolean(Config::SHOW_MOVEABLES));
+
 	g_gui.GetAuiManager()->Update();
 }
 
@@ -368,6 +398,14 @@ void MainToolBar::LoadPerspective()
 	} else
 		GetPane(TOOLBAR_SIZES).Hide();
 
+	if (g_settings.getBoolean(Config::SHOW_TOOLBAR_INDICATORS)) {
+		std::string info = g_settings.getString(Config::TOOLBAR_INDICATORS_LAYOUT);
+		if (!info.empty())
+			manager->LoadPaneInfo(wxString(info), GetPane(TOOLBAR_INDICATORS));
+		GetPane(TOOLBAR_INDICATORS).Show();
+	} else
+		GetPane(TOOLBAR_INDICATORS).Hide();
+
 	manager->Update();
 }
 
@@ -395,6 +433,11 @@ void MainToolBar::SavePerspective()
 	if (g_settings.getBoolean(Config::SHOW_TOOLBAR_SIZES)) {
 		wxString info = manager->SavePaneInfo(GetPane(TOOLBAR_SIZES));
 		g_settings.setString(Config::TOOLBAR_SIZES_LAYOUT, info.ToStdString());
+	}
+
+	if (g_settings.getBoolean(Config::SHOW_TOOLBAR_INDICATORS)) {
+		wxString info = manager->SavePaneInfo(GetPane(TOOLBAR_INDICATORS));
+		g_settings.setString(Config::SHOW_TOOLBAR_INDICATORS, info.ToStdString());
 	}
 }
 
@@ -561,6 +604,30 @@ void MainToolBar::OnSizesButtonClick(wxCommandEvent& event)
 	}
 }
 
+void MainToolBar::OnIndicatorsButtonClick(wxCommandEvent& event)
+{
+	bool toggled = indicators_toolbar->GetToolToggled(event.GetId());
+	switch (event.GetId()) {
+		case TOOLBAR_HOOKS:
+			g_settings.setInteger(Config::SHOW_WALL_HOOKS, toggled);
+			g_gui.root->UpdateIndicatorsMenu();
+			g_gui.RefreshView();
+			break;
+		case TOOLBAR_PICKUPABLES:
+			g_settings.setInteger(Config::SHOW_PICKUPABLES, toggled);
+			g_gui.root->UpdateIndicatorsMenu();
+			g_gui.RefreshView();
+			break;
+		case TOOLBAR_MOVEABLES:
+			g_settings.setInteger(Config::SHOW_MOVEABLES, toggled);
+			g_gui.root->UpdateIndicatorsMenu();
+			g_gui.RefreshView();
+			break;
+		default:
+			break;
+	}
+}
+
 wxAuiPaneInfo& MainToolBar::GetPane(ToolBarID id)
 {
 	wxAuiManager* manager = g_gui.GetAuiManager();
@@ -576,6 +643,8 @@ wxAuiPaneInfo& MainToolBar::GetPane(ToolBarID id)
 			return manager->GetPane(POSITION_BAR_NAME);
 		case TOOLBAR_SIZES:
 			return manager->GetPane(SIZES_BAR_NAME);
+		case TOOLBAR_INDICATORS:
+			return manager->GetPane(INDICATORS_BAR_NAME);
 		default:
 			return wxAuiNullPaneInfo;
 	}

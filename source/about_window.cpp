@@ -21,6 +21,7 @@
 
 #include "about_window.h"
 
+
 class GamePanel : public wxPanel {
 public:
 	GamePanel(wxWindow* parent, int width, int height);

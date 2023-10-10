@@ -187,6 +187,7 @@ void Settings::IO(IOMode mode)
 	Int(TRANSPARENT_ITEMS, 0);
 	Int(SHOW_ALL_FLOORS, 1);
 	Int(SHOW_INGAME_BOX, 0);
+	Int(SHOW_LIGHTS, 1);
 	Int(SHOW_GRID, 0);
 	Int(SHOW_EXTRA, 1);
 	Int(SHOW_SHADE, 1);
@@ -204,6 +205,8 @@ void Settings::IO(IOMode mode)
 	Int(SHOW_ONLY_MODIFIED_TILES, 0);
 	Int(SHOW_PREVIEW, 1);
 	Int(SHOW_WALL_HOOKS, 0);
+	Int(SHOW_PICKUPABLES, 0);
+	Int(SHOW_MOVEABLES, 0);
 
 	section("Version");
 	Int(VERSION_ID, 0);
@@ -302,6 +305,8 @@ void Settings::IO(IOMode mode)
 	String(PALETTE_LAYOUT, "name=02c30f6048629894000011bc00000002;caption=Palette;state=2099148;dir=4;layer=0;row=0;pos=0;prop=100000;bestw=245;besth=100;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1");
 	Int(MINIMAP_VISIBLE, 0);
 	String(MINIMAP_LAYOUT, "name=066e2bc8486298990000259a00000003;caption=Minimap;state=2099151;dir=4;layer=0;row=0;pos=0;prop=100000;bestw=170;besth=130;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=221;floath=164");
+	Int(ACTIONS_HISTORY_VISIBLE, 0);
+	String(ACTIONS_HISTORY_LAYOUT, "name=945c6eb52a414f1B817e8befd4479412;caption=Actions;state=2099151;dir=2;layer=0;row=0;pos=0;prop=100000;bestw=170;besth=130;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=221;floath=164");
 	Int(WINDOW_HEIGHT, 500);
 	Int(WINDOW_WIDTH, 700);
 	Int(WINDOW_MAXIMIZED, 0);
@@ -314,6 +319,7 @@ void Settings::IO(IOMode mode)
 	Int(SHOW_TOOLBAR_BRUSHES, 0);
 	Int(SHOW_TOOLBAR_POSITION, 0);
 	Int(SHOW_TOOLBAR_SIZES, 0);
+	Int(SHOW_TOOLBAR_INDICATORS, 0);
 	String(TOOLBAR_STANDARD_LAYOUT, "");
 	String(TOOLBAR_BRUSHES_LAYOUT, "");
 	String(TOOLBAR_POSITION_LAYOUT, "");

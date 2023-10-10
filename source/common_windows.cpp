@@ -33,6 +33,8 @@
 #include "common_windows.h"
 #include "positionctrl.h"
 
+#include "iominimap.h"
+
 #ifdef _MSC_VER
 	#pragma warning(disable:4018) // signed/unsigned mismatch
 #endif
@@ -52,7 +54,7 @@ MapPropertiesWindow::MapPropertiesWindow(wxWindow* parent, MapTab* view, Editor&
 	editor(editor)
 {
 	// Setup data variabels
-	Map& map = editor.map;
+	const Map& map = editor.getMap();
 
 	wxSizer* topsizer = newd wxBoxSizer(wxVERTICAL);
 
@@ -106,12 +108,12 @@ MapPropertiesWindow::MapPropertiesWindow(wxWindow* parent, MapTab* view, Editor&
 		subsizer->Add(
 			width_spin =
 				newd wxSpinCtrl(this, wxID_ANY, wxstr(i2s(map.getWidth())),
-				wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 256, MAP_MAX_WIDTH), wxSizerFlags(1).Expand()
+				wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, rme::MapMinWidth, rme::MapMaxWidth), wxSizerFlags(1).Expand()
 			);
 		subsizer->Add(
 			height_spin =
 				newd wxSpinCtrl(this, wxID_ANY, wxstr(i2s(map.getHeight())),
-				wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 256, MAP_MAX_HEIGHT), wxSizerFlags(1).Expand()
+				wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, rme::MapMinHeight, rme::MapMaxHeight), wxSizerFlags(1).Expand()
 			);
 		grid_sizer->Add(subsizer, 1, wxEXPAND);
 	}
@@ -238,8 +240,7 @@ struct MapConversionContext
 
 void MapPropertiesWindow::OnClickOK(wxCommandEvent& WXUNUSED(event))
 {
-	Map& map = editor.map;
-
+	Map& map = editor.getMap();
 	MapVersion old_ver = map.getVersion();
 	MapVersion new_ver;
 
@@ -266,8 +267,8 @@ void MapPropertiesWindow::OnClickOK(wxCommandEvent& WXUNUSED(event))
 		wxArrayString warnings;
 
 		// Switch version
-		g_gui.GetCurrentEditor()->selection.clear();
-		g_gui.GetCurrentEditor()->actionQueue->clear();
+		g_gui.GetCurrentEditor()->getSelection().clear();
+		g_gui.GetCurrentEditor()->clearActions();
 
 		if(new_ver.client < old_ver.client) {
 			int ret = g_gui.PopupDialog(this, "Notice",
@@ -402,13 +403,13 @@ ImportMapWindow::ImportMapWindow(wxWindow* parent, Editor& editor) :
 	// Import offset
 	tmpsizer = newd wxStaticBoxSizer(new wxStaticBox(this, wxID_ANY, "Import Offset"), wxHORIZONTAL);
 	tmpsizer->Add(newd wxStaticText(tmpsizer->GetStaticBox(), wxID_ANY, "Offset X:"), 0, wxALL | wxEXPAND, 5);
-	x_offset_ctrl = newd wxSpinCtrl(tmpsizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(60, 23), wxSP_ARROW_KEYS, -MAP_MAX_HEIGHT, MAP_MAX_HEIGHT);
+	x_offset_ctrl = newd wxSpinCtrl(tmpsizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(60, 23), wxSP_ARROW_KEYS, -rme::MapMaxHeight, rme::MapMaxHeight);
 	tmpsizer->Add(x_offset_ctrl, 0, wxALL, 5);
 	tmpsizer->Add(newd wxStaticText(tmpsizer->GetStaticBox(), wxID_ANY, "Offset Y:"), 0, wxALL, 5);
-	y_offset_ctrl = newd wxSpinCtrl(tmpsizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(60, 23), wxSP_ARROW_KEYS, -MAP_MAX_HEIGHT, MAP_MAX_HEIGHT);
+	y_offset_ctrl = newd wxSpinCtrl(tmpsizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(60, 23), wxSP_ARROW_KEYS, -rme::MapMaxHeight, rme::MapMaxHeight);
 	tmpsizer->Add(y_offset_ctrl, 0, wxALL, 5);
 	tmpsizer->Add(newd wxStaticText(tmpsizer->GetStaticBox(), wxID_ANY, "Offset Z:"), 0, wxALL, 5);
-	z_offset_ctrl = newd wxSpinCtrl(tmpsizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(60, 23), wxSP_ARROW_KEYS, -MAP_MAX_LAYER, MAP_MAX_LAYER);
+	z_offset_ctrl = newd wxSpinCtrl(tmpsizer->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(60, 23), wxSP_ARROW_KEYS, -rme::MapMaxLayer, rme::MapMaxLayer);
 	tmpsizer->Add(z_offset_ctrl, 0, wxALL, 5);
 	sizer->Add(tmpsizer, 1, wxEXPAND | wxLEFT | wxRIGHT, 5);
 
@@ -544,12 +545,21 @@ ExportMiniMapWindow::ExportMiniMapWindow(wxWindow* parent, Editor& editor) :
 	sizer->Add(tmpsizer, 0, wxALL | wxEXPAND, 5);
 
 	// File name
-	wxString mapName(editor.map.getName().c_str(), wxConvUTF8);
+	wxString mapName(editor.getMap().getName().c_str(), wxConvUTF8);
 	file_name_text_field = newd wxTextCtrl(this, wxID_ANY, mapName.BeforeLast('.'), wxDefaultPosition, wxDefaultSize);
 	file_name_text_field->Bind(wxEVT_KEY_UP, &ExportMiniMapWindow::OnFileNameChanged, this);
 	tmpsizer = newd wxStaticBoxSizer(wxHORIZONTAL, this, "File Name");
 	tmpsizer->Add(file_name_text_field, 1, wxALL, 5);
 	sizer->Add(tmpsizer, 0, wxLEFT | wxRIGHT | wxBOTTOM | wxEXPAND, 5);
+
+	// Format options
+	wxArrayString format_choices;
+	format_choices.Add(".otmm (Client Minimap)");
+	format_choices.Add(".png (PNG Image)");
+	format_choices.Add(".bmp (Bitmap Image)");
+	format_options = new wxChoice(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, format_choices);
+	format_options->SetSelection(0);
+	tmpsizer->Add(format_options, 1, wxALL, 5);
 
 	// Export options
 	wxArrayString choices;
@@ -563,7 +573,7 @@ ExportMiniMapWindow::ExportMiniMapWindow(wxWindow* parent, Editor& editor) :
 	// Area options
 	tmpsizer = newd wxStaticBoxSizer(wxHORIZONTAL, this, "Area Options");
 	floor_options = newd wxChoice(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, choices);
-	floor_number = newd wxSpinCtrl(this, wxID_ANY, i2ws(GROUND_LAYER), wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, MAP_MAX_LAYER, GROUND_LAYER);
+	floor_number = newd wxSpinCtrl(this, wxID_ANY, i2ws(rme::MapGroundLayer), wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, rme::MapMinLayer, rme::MapMaxLayer, rme::MapGroundLayer);
 	floor_number->Enable(false);
 	floor_options->SetSelection(0);
 	tmpsizer->Add(floor_options, 1, wxALL, 5);
@@ -613,59 +623,29 @@ void ExportMiniMapWindow::OnFileNameChanged(wxKeyEvent& event)
 
 void ExportMiniMapWindow::OnClickOK(wxCommandEvent& WXUNUSED(event))
 {
-	g_gui.CreateLoadBar("Exporting minimap");
+	g_gui.CreateLoadBar("Exporting minimap...");
 
-	try
-	{
-		FileName directory(directory_text_field->GetValue());
-		g_settings.setString(Config::MINIMAP_EXPORT_DIR, directory_text_field->GetValue().ToStdString());
+	auto format = static_cast<MinimapExportFormat>(format_options->GetSelection());
+	auto mode = static_cast<MinimapExportMode>(floor_options->GetSelection());
+	std::string directory = directory_text_field->GetValue().ToStdString();
+	std::string file_name = file_name_text_field->GetValue().ToStdString();
+	int floor = floor_number->GetValue();
 
-		switch(floor_options->GetSelection())
-		{
-			case 0: { // All floors
-				for(int floor = 0; floor < MAP_LAYERS; ++floor) {
-					g_gui.SetLoadScale(int(floor*(100.f/16.f)), int((floor+1)*(100.f/16.f)));
-					FileName file(file_name_text_field->GetValue() + "_" + i2ws(floor) + ".bmp");
-                    file.Normalize(wxPATH_NORM_ABSOLUTE | wxPATH_NORM_TILDE | wxPATH_NORM_DOTS, directory.GetFullPath());
-                    editor.exportMiniMap(file, floor, true);
-				}
-				break;
-			}
+	g_settings.setString(Config::MINIMAP_EXPORT_DIR, directory);
 
-			case 1: { // Ground floor
-				FileName file(file_name_text_field->GetValue() + "_" + i2ws(GROUND_LAYER) + ".bmp");
-                file.Normalize(wxPATH_NORM_ABSOLUTE | wxPATH_NORM_TILDE | wxPATH_NORM_DOTS, directory.GetFullPath());
-                editor.exportMiniMap(file, GROUND_LAYER, true);
-				break;
-			}
-
-			case 2: { // Specific floors
-				int floor = floor_number->GetValue();
-				FileName file(file_name_text_field->GetValue() + "_" + i2ws(floor) + ".bmp");
-                file.Normalize(wxPATH_NORM_ABSOLUTE | wxPATH_NORM_TILDE | wxPATH_NORM_DOTS, directory.GetFullPath());
-                editor.exportMiniMap(file, floor, true);
-				break;
-			}
-
-			case 3: { // Selected area
-				editor.exportSelectionAsMiniMap(directory, file_name_text_field->GetValue());
-				break;
-			}
-		}
-	}
-	catch(std::bad_alloc&)
-	{
-		g_gui.PopupDialog("Error", "There is not enough memory available to complete the operation.", wxOK);
+	IOMinimap io(&editor, format, mode, true);
+	if (!io.saveMinimap(directory, file_name, floor)) {
+		g_gui.PopupDialog("Error", io.getError(), wxOK);
 	}
 
 	g_gui.DestroyLoadBar();
-	EndModal(1);
+	EndModal(wxID_OK);
 }
 
 void ExportMiniMapWindow::OnClickCancel(wxCommandEvent& WXUNUSED(event))
 {
 	// Just close this window
-	EndModal(0);
+	EndModal(wxID_CANCEL);
 }
 
 void ExportMiniMapWindow::CheckValues()
@@ -892,11 +872,11 @@ void FindBrushDialog::OnClickOKInternal()
 				if(!result_brush) {
 					// Then let's search the RAWs
 					for(int id = 0; id <= g_items.getMaxID(); ++id) {
-						ItemType& it = g_items[id];
-						if(it.id == 0)
+						const ItemType& type = g_items.getItemType(id);
+						if(type.id == 0)
 							continue;
 
-						RAWBrush* raw_brush = it.raw_brush;
+						RAWBrush* raw_brush = type.raw_brush;
 						if(!raw_brush)
 							continue;
 
@@ -947,11 +927,11 @@ void FindBrushDialog::RefreshContentsInternal()
 		}
 
 		for(int id = 0; id <= g_items.getMaxID(); ++id) {
-			ItemType& it = g_items[id];
-			if(it.id == 0)
+			const ItemType& type = g_items.getItemType(id);
+			if(type.id == 0)
 				continue;
 
-			RAWBrush* raw_brush = it.raw_brush;
+			RAWBrush* raw_brush = type.raw_brush;
 			if(!raw_brush)
 				continue;
 
@@ -1226,7 +1206,7 @@ EditTownsDialog::EditTownsDialog(wxWindow* parent, Editor& editor) :
 	wxDialog(parent, wxID_ANY, "Towns", wxDefaultPosition, wxSize(280,330)),
 	editor(editor)
 {
-	Map& map = editor.map;
+	const Map& map = editor.getMap();
 
 	// Create topsizer
 	wxSizer* sizer = newd wxBoxSizer(wxVERTICAL);
@@ -1437,10 +1417,9 @@ void EditTownsDialog::OnClickRemove(wxCommandEvent& WXUNUSED(event))
 		}
 		if(!town) return;
 
-		Map& map = editor.map;
-		for(HouseMap::iterator house_iter = map.houses.begin(); house_iter != map.houses.end(); ++house_iter) {
-			House* house = house_iter->second;
-			if(house->townid == town->getID()) {
+		const Map& map = editor.getMap();
+		for(const auto& pair : map.houses) {
+			if(pair.second->townid == town->getID()) {
 				g_gui.PopupDialog(this, "Error", "You cannot delete a town which still has houses associated with it.", wxOK);
 				return;
 			}
@@ -1489,7 +1468,7 @@ void EditTownsDialog::OnClickOK(wxCommandEvent& WXUNUSED(event))
 			}
 		}
 
-		Towns& towns = editor.map.towns;
+		Towns& towns = editor.getMap().towns;
 
 		// Verify the newd information
 		for(std::vector<Town*>::iterator town_iter = town_list.begin(); town_iter != town_list.end(); ++town_iter) {
@@ -1499,8 +1478,8 @@ void EditTownsDialog::OnClickOK(wxCommandEvent& WXUNUSED(event))
 				return;
 			}
 			if(!town->getTemplePosition().isValid() ||
-				town->getTemplePosition().x > editor.map.getWidth() ||
-				town->getTemplePosition().y > editor.map.getHeight()) {
+				town->getTemplePosition().x > editor.getMap().getWidth() ||
+				town->getTemplePosition().y > editor.getMap().getHeight()) {
 				wxString msg;
 				msg << "The town " << wxstr(town->getName()) << " has an invalid temple position.";
 				g_gui.PopupDialog(this, "Error", msg, wxOK);
@@ -1516,7 +1495,7 @@ void EditTownsDialog::OnClickOK(wxCommandEvent& WXUNUSED(event))
 			towns.addTown(*town_iter);
 		}
 		town_list.clear();
-		editor.map.doChange();
+		editor.getMap().doChange();
 
 		EndModal(1);
 		g_gui.RefreshPalettes();
@@ -1542,12 +1521,12 @@ GotoPositionDialog::GotoPositionDialog(wxWindow* parent, Editor& editor) :
 	wxDialog(parent, wxID_ANY, "Go To Position", wxDefaultPosition, wxDefaultSize),
 	editor(editor)
 {
-	Map& map = editor.map;
+	const Map& map = editor.getMap();
 
 	// create topsizer
 	wxSizer* sizer = newd wxBoxSizer(wxVERTICAL);
 
-	posctrl = newd PositionCtrl(this, "Destination", map.getWidth() / 2, map.getHeight() / 2, GROUND_LAYER, map.getWidth(), map.getHeight());
+	posctrl = newd PositionCtrl(this, "Destination", map.getWidth() / 2, map.getHeight() / 2, rme::MapGroundLayer, map.getWidth(), map.getHeight());
 	sizer->Add(posctrl, 0, wxTOP | wxLEFT | wxRIGHT, 20);
 
 	// OK/Cancel buttons

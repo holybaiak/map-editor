@@ -124,7 +124,8 @@ void MapWindow::GetViewSize(int* x, int* y)
 
 void MapWindow::FitToMap()
 {
-	SetSize(editor.map.getWidth() * TILE_SIZE, editor.map.getHeight() * TILE_SIZE, true);
+	const Map& map = editor.getMap();
+	SetSize(map.getWidth() * rme::TileSize, map.getHeight() * rme::TileSize, true);
 }
 
 Position MapWindow::GetScreenCenterPosition()
@@ -134,17 +135,18 @@ Position MapWindow::GetScreenCenterPosition()
 	return Position(x, y, canvas->GetFloor());
 }
 
-void MapWindow::SetScreenCenterPosition(const Position& position)
+void MapWindow::SetScreenCenterPosition(const Position& position, bool showIndicator)
 {
-	if(position == Position())
+	if(!position.isValid())
 		return;
 
-	int x = position.x * TILE_SIZE;
-	int y = position.y * TILE_SIZE;
+	int x = position.x * rme::TileSize;
+	int y = position.y * rme::TileSize;
+	int z = position.z;
 	if(position.z < 8) {
 		// Compensate for floor offset above ground
-		x -= (GROUND_LAYER - position.z) * TILE_SIZE;
-		y -= (GROUND_LAYER - position.z) * TILE_SIZE;
+		x -= (rme::MapGroundLayer - z) * rme::TileSize;
+		y -= (rme::MapGroundLayer - z) * rme::TileSize;
 	}
 
 	const Position& center = GetScreenCenterPosition();
@@ -155,12 +157,15 @@ void MapWindow::SetScreenCenterPosition(const Position& position)
 	}
 
 	Scroll(x, y, true);
-	canvas->ChangeFloor(position.z);
+	canvas->ChangeFloor(z);
+
+	if (showIndicator)
+		canvas->ShowPositionIndicator(position);
 }
 
 void MapWindow::GoToPreviousCenterPosition()
 {
-	SetScreenCenterPosition(previous_position);
+	SetScreenCenterPosition(previous_position, true);
 }
 
 void MapWindow::Scroll(int x, int y, bool center)

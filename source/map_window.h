@@ -67,11 +67,11 @@ public:
 
 	// Screen position.
 	Position GetScreenCenterPosition();
-	void SetScreenCenterPosition(const Position& position);
+	void SetScreenCenterPosition(const Position& position, bool showIndicator = false);
 	void GoToPreviousCenterPosition();
 
 	// Return the containing canvas
-	MapCanvas* GetCanvas() const { return canvas; }
+	MapCanvas* GetCanvas() const noexcept { return canvas; }
 
 	void ShowReplaceItemsDialog(bool selectionOnly);
 	void CloseReplaceItemsDialog();

@@ -23,7 +23,7 @@
 #include "mt_rand.h"
 
 //
-inline bool testFlags(size_t flags, size_t test) {
+inline bool testFlags(size_t flags, size_t test) noexcept {
 	return (flags & test) != 0;
 }
 
@@ -67,8 +67,12 @@ std::string wstring2string(const std::wstring& widestring);
 
 // Gets position values from ClipBoard
 bool posFromClipboard(int& x, int& y, int& z);
+bool posToClipboard(int x, int y, int z, int format);
+bool posToClipboard(int fromx, int fromy, int fromz, int tox, int toy, int toz);
 
 // Returns 'yes' if the defined value is true or 'no' if it is false.
 wxString b2yn(bool v);
+
+wxColor colorFromEightBit(int color);
 
 #endif

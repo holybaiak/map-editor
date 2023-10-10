@@ -76,10 +76,10 @@ bool Map::open(const std::string file)
 
 	for(int x = 20; ; x += 2) {
 		int y = 22;
-		Tile* old = getTile(x, y, GROUND_LAYER);
+		Tile* old = getTile(x, y, rme::MapGroundLayer);
 		if(old) {
 			y -= 2;
-			Tile* new_ = getTile(x, y, GROUND_LAYER);
+			Tile* new_ = getTile(x, y, rme::MapGroundLayer);
 			if(new_) {
 				if(old->ground || old->items.size()) {
 					out << "\tvecval.clear();\n";
@@ -283,7 +283,7 @@ void Map::cleanInvalidTiles(bool showdialog)
 			continue;
 
 		for(ItemVector::iterator item_iter = tile->items.begin(); item_iter != tile->items.end();) {
-			if(g_items.typeExists((*item_iter)->getID()))
+			if(g_items.isValidID((*item_iter)->getID()))
 				++item_iter;
 			else {
 				delete *item_iter;
@@ -301,16 +301,6 @@ void Map::cleanInvalidTiles(bool showdialog)
 		g_gui.DestroyLoadBar();
 }
 
-MapVersion Map::getVersion() const
-{
-	return mapVersion;
-}
-
-bool Map::hasChanged() const
-{
-	return has_changed;
-}
-
 bool Map::doChange()
 {
 	bool doupdate = !has_changed;
@@ -323,11 +313,6 @@ bool Map::clearChanges()
 	bool doupdate = has_changed;
 	has_changed = false;
 	return doupdate;
-}
-
-bool Map::hasFile() const
-{
-	return filename != "";
 }
 
 void Map::setWidth(int new_width)
@@ -422,54 +407,86 @@ void Map::removeSpawnMonster(Tile* tile)
 	}
 }
 
-SpawnMonsterList Map::getSpawnMonsterList(Tile* where)
+SpawnMonsterList Map::getSpawnMonsterList(const Tile* tile) const
 {
 	SpawnMonsterList list;
-	TileLocation* tile_loc = where->getLocation();
-	if(tile_loc) {
-		if(tile_loc->getSpawnMonsterCount() > 0) {
-			uint32_t found = 0;
-			if(where->spawnMonster) {
+	if(!tile) return list;
+
+	const TileLocation* location = tile->getLocation();
+	if(!location || location->getSpawnMonsterCount() == 0)
+		return list;
+
+	uint32_t found = 0;
+	if(tile->spawnMonster) {
+		++found;
+		list.push_back(tile->spawnMonster);
+	}
+
+	// Scans the border tiles in an expanding square around the original spawn
+	const Position& position = tile->getPosition();
+	int start_x = position.x - 1;
+	int end_x = position.x + 1;
+	int start_y = position.y - 1;
+	int end_y = position.y + 1;
+
+	while(found != location->getSpawnMonsterCount()) {
+		for(int x = start_x; x <= end_x; ++x) {
+			const Tile* start_tile = getTile(x, start_y, position.z);
+			if(start_tile && start_tile->spawnMonster) {
+				list.push_back(start_tile->spawnMonster);
 				++found;
-				list.push_back(where->spawnMonster);
 			}
 
-			// Scans the border tiles in an expanding square around the original monster spawn
-			int z = where->getZ();
-			int start_x = where->getX() - 1, end_x = where->getX() + 1;
-			int start_y = where->getY() - 1, end_y = where->getY() + 1;
-			while(found != tile_loc->getSpawnMonsterCount()) {
-				for(int x = start_x; x <= end_x; ++x) {
-					Tile* tile = getTile(x, start_y, z);
-					if(tile && tile->spawnMonster) {
-						list.push_back(tile->spawnMonster);
-						++found;
-					}
-					tile = getTile(x, end_y, z);
-					if(tile && tile->spawnMonster) {
-						list.push_back(tile->spawnMonster);
-						++found;
-					}
-				}
-
-				for(int y = start_y + 1; y < end_y; ++y) {
-					Tile* tile = getTile(start_x, y, z);
-					if(tile && tile->spawnMonster) {
-						list.push_back(tile->spawnMonster);
-						++found;
-					}
-					tile = getTile(end_x, y, z);
-					if(tile && tile->spawnMonster) {
-						list.push_back(tile->spawnMonster);
-						++found;
-					}
-				}
-				--start_x, --start_y;
-				++end_x, ++end_y;
+			const Tile* end_tile = getTile(x, end_y, position.z);
+			if(end_tile && end_tile->spawnMonster) {
+				list.push_back(end_tile->spawnMonster);
+				++found;
 			}
 		}
+
+			for(int y = start_y + 1; y < end_y; ++y) {
+			const Tile* start_tile = getTile(start_x, y, position.z);
+			if(start_tile && start_tile->spawnMonster) {
+				list.push_back(start_tile->spawnMonster);
+				++found;
+			}
+			const Tile* end_tile = getTile(end_x, y, position.z);
+			if(end_tile && end_tile->spawnMonster) {
+				list.push_back(end_tile->spawnMonster);
+				++found;
+			}
+		}
+
+		for(int y = start_y + 1; y < end_y; ++y) {
+			const Tile* start_tile = getTile(start_x, y, position.z);
+			if(start_tile && start_tile->spawnMonster) {
+				list.push_back(start_tile->spawnMonster);
+				++found;
+			}
+			const Tile* end_tile = getTile(end_x, y, position.z);
+			if(end_tile && end_tile->spawnMonster) {
+				list.push_back(end_tile->spawnMonster);
+				++found;
+			}
+		}
+		--start_x;
+		--start_y;
+		++end_x;
+		++end_y;
 	}
 	return list;
+}
+
+SpawnMonsterList Map::getSpawnMonsterList(const Position& position) const
+{
+	const Tile* tile = getTile(position);
+	return getSpawnMonsterList(tile);
+}
+
+SpawnMonsterList Map::getSpawnMonsterList(int x, int y, int z) const
+{
+	const Tile* tile = getTile(x, y, z);
+	return getSpawnMonsterList(tile);
 }
 
 bool Map::addSpawnNpc(Tile* tile)
@@ -522,57 +539,76 @@ void Map::removeSpawnNpc(Tile* tile)
 	}
 }
 
-SpawnNpcList Map::getSpawnNpcList(Tile* where)
+SpawnNpcList Map::getSpawnNpcList(const Tile* tile) const
 {
 	SpawnNpcList listNpc;
-	TileLocation* tile_loc = where->getLocation();
-	if(tile_loc) {
-		if(tile_loc->getSpawnNpcCount() > 0) {
-			uint32_t found = 0;
-			if(where->spawnNpc) {
+	if(!tile) return listNpc;
+
+	const TileLocation* location = tile->getLocation();
+	if(!location || location->getSpawnNpcCount() == 0)
+		return listNpc;
+
+	uint32_t found = 0;
+	if(tile->spawnNpc) {
+		++found;
+		listNpc.push_back(tile->spawnNpc);
+	}
+
+	// Scans the border tiles in an expanding square around the original spawn
+	const Position& position = tile->getPosition();
+	int start_x = position.x - 1;
+	int end_x = position.x + 1;
+	int start_y = position.y - 1;
+	int end_y = position.y + 1;
+
+	while(found != location->getSpawnNpcCount()) {
+		for(int x = start_x; x <= end_x; ++x) {
+			const Tile* start_tile = getTile(x, start_y, position.z);
+			if(start_tile && start_tile->spawnNpc) {
+				listNpc.push_back(start_tile->spawnNpc);
 				++found;
-				listNpc.push_back(where->spawnNpc);
 			}
 
-			// Scans the border tiles in an expanding square around the original spawnNpc
-			int z = where->getZ();
-			int start_x = where->getX() - 1, end_x = where->getX() + 1;
-			int start_y = where->getY() - 1, end_y = where->getY() + 1;
-			while(found != tile_loc->getSpawnNpcCount()) {
-				for(int x = start_x; x <= end_x; ++x) {
-					Tile* tile = getTile(x, start_y, z);
-					if(tile && tile->spawnNpc) {
-						listNpc.push_back(tile->spawnNpc);
-						++found;
-					}
-					tile = getTile(x, end_y, z);
-					if(tile && tile->spawnNpc) {
-						listNpc.push_back(tile->spawnNpc);
-						++found;
-					}
-				}
-
-				for(int y = start_y + 1; y < end_y; ++y) {
-					Tile* tile = getTile(start_x, y, z);
-					if(tile && tile->spawnNpc) {
-						listNpc.push_back(tile->spawnNpc);
-						++found;
-					}
-					tile = getTile(end_x, y, z);
-					if(tile && tile->spawnNpc) {
-						listNpc.push_back(tile->spawnNpc);
-						++found;
-					}
-				}
-				--start_x, --start_y;
-				++end_x, ++end_y;
+			const Tile* end_tile = getTile(x, end_y, position.z);
+			if(end_tile && end_tile->spawnNpc) {
+				listNpc.push_back(end_tile->spawnNpc);
+				++found;
 			}
 		}
+
+			for(int y = start_y + 1; y < end_y; ++y) {
+			const Tile* start_tile = getTile(start_x, y, position.z);
+			if(start_tile && start_tile->spawnNpc) {
+				listNpc.push_back(start_tile->spawnNpc);
+				++found;
+			}
+			const Tile* end_tile = getTile(end_x, y, position.z);
+			if(end_tile && end_tile->spawnNpc) {
+				listNpc.push_back(end_tile->spawnNpc);
+				++found;
+			}
+		}
+		--start_x;
+		--start_y;
+		++end_x;
+		++end_y;
 	}
 	return listNpc;
 }
 
-bool Map::exportMinimap(FileName filename, int floor /*= GROUND_LAYER*/, bool displaydialog)
+SpawnNpcList Map::getSpawnNpcList(const Position& position) const
+{
+	const Tile* tile = getTile(position);
+	return getSpawnNpcList(tile);
+}
+
+SpawnNpcList Map::getSpawnNpcList(int x, int y, int z) const
+{
+	const Tile* tile = getTile(x, y, z);
+	return getSpawnNpcList(tile);
+}
+
+bool Map::exportMinimap(FileName filename, int floor /*= rme::MapGroundLayer*/, bool displaydialog)
 {
 	uint8_t* pic = nullptr;
 
@@ -583,6 +619,10 @@ bool Map::exportMinimap(FileName filename, int floor /*= GROUND_LAYER*/, bool di
 
 		if(size() == 0)
 			return true;
+
+		uint32_t minimap_colors[256];
+		for(int i = 0; i < 256; ++i)
+			minimap_colors[i] = colorFromEightBit(i).GetRGB();
 
 		for(MapIterator mit = begin(); mit != end(); ++mit) {
 			if((*mit)->get() == nullptr || (*mit)->empty())
@@ -693,7 +733,7 @@ bool Map::exportMinimap(FileName filename, int floor /*= GROUND_LAYER*/, bool di
 
 		// Write the color palette
 		for(int i = 0; i < 256; ++i)
-			fh.addU32(uint32_t(minimap_color[i]));
+			fh.addU32(minimap_colors[i]);
 
 		// Bitmap width must be divisible by four, calculate how much padding we need
 		int padding = ((minimap_width & 3) != 0? 4-(minimap_width & 3) : 0);
@@ -718,4 +758,64 @@ bool Map::exportMinimap(FileName filename, int floor /*= GROUND_LAYER*/, bool di
 	}
 
 	return true;
+}
+
+void Map::updateUniqueIds(Tile* old_tile, Tile* new_tile)
+{
+	if(old_tile && old_tile->hasUniqueItem()) {
+		if(old_tile->ground) {
+			uint16_t uid = old_tile->ground->getUniqueID();
+			if(uid != 0)
+				removeUniqueId(uid);
+		}
+		for(const Item* item : old_tile->items) {
+			if(item) {
+				uint16_t uid = item->getUniqueID();
+				if(uid != 0) {
+					removeUniqueId(uid);
+				}
+			}
+		}
+	}
+
+	if(new_tile && new_tile->hasUniqueItem()) {
+		if(new_tile->ground) {
+			uint16_t uid = new_tile->ground->getUniqueID();
+			if(uid != 0)
+				addUniqueId(uid);
+		}
+		for(const Item* item : new_tile->items) {
+			if(item) {
+				uint16_t uid = item->getUniqueID();
+				if(uid != 0) {
+					addUniqueId(uid);
+				}
+			}
+		}
+	}
+}
+
+void Map::addUniqueId(uint16_t uid)
+{
+	auto it = std::find(uniqueIds.begin(), uniqueIds.end(), uid);
+	if (it == uniqueIds.end()) {
+		uniqueIds.push_back(uid);
+	}
+}
+
+void Map::removeUniqueId(uint16_t uid)
+{
+	auto it = std::find(uniqueIds.begin(), uniqueIds.end(), uid);
+	if (it != uniqueIds.end()) {
+		uniqueIds.erase(it);
+	}
+}
+
+bool Map::hasUniqueId(uint16_t uid) const
+{
+	if (uid < rme::MinUniqueId || uniqueIds.empty())
+		return false;
+
+	auto it = std::find(uniqueIds.begin(), uniqueIds.end(), uid);
+	return it != uniqueIds.end();
 }

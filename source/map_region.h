@@ -18,6 +18,7 @@
 #ifndef RME_MAP_REGION_H
 #define RME_MAP_REGION_H
 
+#include "const.h"
 #include "position.h"
 
 class Tile;
@@ -45,41 +46,41 @@ public:
 
 	// Access tile
 	// Can't set directly since that does not update tile count
-	Tile* get() {return tile;}
-	const Tile* get() const {return tile;}
+	Tile* get() noexcept { return tile; }
+	const Tile* get() const noexcept { return tile; }
 
 	int size() const;
 	bool empty() const;
 
-	Position getPosition() const { return position; }
+	const Position& getPosition() const noexcept { return position; }
+	int getX() const noexcept { return position.x; }
+	int getY() const noexcept { return position.y; }
+	int getZ() const noexcept { return position.z; }
 
-	int getX() const {return position.x;}
-	int getY() const {return position.y;}
-	int getZ() const {return position.z;}
+	size_t getSpawnMonsterCount() const noexcept {return spawn_monster_count;}
+	void increaseSpawnCount() noexcept  {spawn_monster_count++;}
+	void decreaseSpawnMonsterCount() noexcept  {spawn_monster_count--;}
 
-	size_t getSpawnMonsterCount() const {return spawn_monster_count;}
-	void increaseSpawnCount() {spawn_monster_count++;}
-	void decreaseSpawnMonsterCount() {spawn_monster_count--;}
+	size_t getSpawnNpcCount() const noexcept {return spawn_npc_count;}
+	void increaseSpawnNpcCount() noexcept {spawn_npc_count++;}
+	void decreaseSpawnNpcCount() noexcept {spawn_npc_count--;}
 
-	size_t getSpawnNpcCount() const {return spawn_npc_count;}
-	void increaseSpawnNpcCount() {spawn_npc_count++;}
-	void decreaseSpawnNpcCount() {spawn_npc_count--;}
-
-	size_t getWaypointCount() const {return waypoint_count;}
+	size_t getWaypointCount() const noexcept  {return waypoint_count;}
 	void increaseWaypointCount() {waypoint_count++;}
 	void decreaseWaypointCount() {waypoint_count--;}
-	HouseExitList* createHouseExits() {if(house_exits) return house_exits; return house_exits = newd HouseExitList;}
-	HouseExitList* getHouseExits() {return house_exits;}
+	HouseExitList* createHouseExits();
+	HouseExitList* getHouseExits() noexcept  { return house_exits; }
 
 	friend class Floor;
 	friend class QTreeNode;
 	friend class Waypoints;
 };
 
-class Floor {
+class Floor
+{
 public:
 	Floor(int x, int y, int z);
-	TileLocation locs[MAP_LAYERS];
+	TileLocation locs[rme::MapLayers];
 };
 
 // This is not a QuadTree, but a HexTree (16 child nodes to every node), so the name is abit misleading
@@ -118,17 +119,19 @@ public:
 	void setRequested(bool underground, bool r);
 	bool isVisible(bool underground);
 	bool isRequested(bool underground);
+
 protected:
 	BaseMap& map;
 	uint32_t visible;
 
 	bool isLeaf;
+
 	union {
-		QTreeNode* child[MAP_LAYERS];
-		Floor* array[MAP_LAYERS];
-#if 16 != MAP_LAYERS
-#    error "You need to rewrite the QuadTree in order to handle more or less than 16 floors"
-#endif
+		QTreeNode* child[rme::MapLayers];
+		Floor* array[rme::MapLayers];
+//#if 16 != rme::MapLayers
+//#    error "You need to rewrite the QuadTree in order to handle more or less than 16 floors"
+//#endif
 	};
 
 	friend class BaseMap;

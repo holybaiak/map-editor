@@ -40,7 +40,7 @@ MinimapWindow::MinimapWindow(wxWindow* parent) :
 	update_timer(this)
 {
 	for(int i = 0; i < 256; ++i) {
-		pens[i] = newd wxPen(wxColor(minimap_color[i].red, minimap_color[i].green, minimap_color[i].blue));
+		pens[i] = new wxPen(colorFromEightBit(i));
 	}
 }
 
@@ -82,6 +82,7 @@ void MinimapWindow::OnPaint(wxPaintEvent& event)
 
 	if(!g_gui.IsEditorOpen()) return;
 	Editor& editor = *g_gui.GetCurrentEditor();
+	const Map& map = editor.getMap();
 
 	int window_width = GetSize().GetWidth();
 	int window_height = GetSize().GetHeight();
@@ -102,22 +103,22 @@ void MinimapWindow::OnPaint(wxPaintEvent& event)
 	if(start_x < 0) {
 		start_x = 0;
 		end_x = window_width;
-	} else if(end_x > editor.map.getWidth()) {
-		start_x = editor.map.getWidth() - window_width;
-		end_x = editor.map.getWidth();
+	} else if(end_x > map.getWidth()) {
+		start_x = map.getWidth() - window_width;
+		end_x = map.getWidth();
 	}
 	if(start_y < 0) {
 		start_y = 0;
 		end_y = window_height;
-	} else if(end_y > editor.map.getHeight()) {
-		start_y = editor.map.getHeight() - window_height;
-		end_y = editor.map.getHeight();
+	} else if(end_y > map.getHeight()) {
+		start_y = map.getHeight() - window_height;
+		end_y = map.getHeight();
 	}
 
 	start_x = std::max(start_x, 0);
 	start_y = std::max(start_y, 0);
-	end_x = std::min(end_x, editor.map.getWidth());
-	end_y = std::min(end_y, editor.map.getHeight());
+	end_x = std::min(end_x, map.getWidth());
+	end_y = std::min(end_y, map.getHeight());
 
 	last_start_x = start_x;
 	last_start_y = start_y;
@@ -129,7 +130,7 @@ void MinimapWindow::OnPaint(wxPaintEvent& event)
 	if(g_gui.IsRenderingEnabled()) {
 		for(int y = start_y, window_y = 0; y <= end_y; ++y, ++window_y) {
 			for(int x = start_x, window_x = 0; x <= end_x; ++x, ++window_x) {
-				Tile* tile = editor.map.getTile(x, y, floor);
+				const Tile* tile = map.getTile(x, y, floor);
 				if(tile) {
 					uint8_t color = tile->getMiniMapColor();
 					if(color) {
@@ -157,12 +158,12 @@ void MinimapWindow::OnPaint(wxPaintEvent& event)
 			int view_start_x, view_start_y;
 			int view_end_x, view_end_y;
 
-			int tile_size = int(TILE_SIZE / canvas->GetZoom()); // after zoom
+			int tile_size = int(rme::TileSize / canvas->GetZoom()); // after zoom
 
-			int floor_offset = (floor > GROUND_LAYER ? 0 : (GROUND_LAYER - floor));
+			int floor_offset = (floor > rme::MapGroundLayer ? 0 : (rme::MapGroundLayer - floor));
 
-			view_start_x = view_scroll_x / TILE_SIZE + floor_offset;
-			view_start_y = view_scroll_y / TILE_SIZE + floor_offset;
+			view_start_x = view_scroll_x / rme::TileSize + floor_offset;
+			view_start_y = view_scroll_y / rme::TileSize + floor_offset;
 
 			view_end_x = view_start_x + screensize_x / tile_size + 1;
 			view_end_y = view_start_y + screensize_y / tile_size + 1;

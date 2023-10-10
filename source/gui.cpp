@@ -36,6 +36,7 @@
 #include "application.h"
 #include "welcome_dialog.h"
 #include "spawn_npc_brush.h"
+#include "actions_history_window.h"
 
 #include "live_client.h"
 #include "live_tab.h"
@@ -46,6 +47,7 @@
 #endif
 
 const wxEventType EVT_UPDATE_MENUS = wxNewEventType();
+const wxEventType EVT_UPDATE_ACTIONS = wxNewEventType();
 
 // Global GUI instance
 GUI g_gui;
@@ -57,6 +59,7 @@ GUI::GUI() :
 	minimap(nullptr),
 	gem(nullptr),
 	search_result_window(nullptr),
+	actions_history_window(nullptr),
 	secondary_map(nullptr),
 	doodad_buffer_map(nullptr),
 
@@ -480,7 +483,7 @@ void GUI::SaveCurrentMap(FileName filename, bool showdialog)
 		if(editor) {
 			editor->saveMap(filename, showdialog);
 
-			const std::string& filename = editor->map.getFilename();
+			const std::string& filename = editor->getMap().getFilename();
 			const Position& position = mapTab->GetScreenCenterPosition();
 			std::ostringstream stream;
 			stream << position;
@@ -551,14 +554,13 @@ bool GUI::NewMap()
 
 	auto *mapTab = newd MapTab(tabbook, editor);
 	mapTab->OnSwitchEditorMode(mode);
-    editor->map.clearChanges();
+    editor->clearChanges();
 
 	SetStatusText("Created new map");
 	UpdateTitle();
 	RefreshPalettes();
 	root->UpdateMenubar();
 	root->Refresh();
-
 	return true;
 }
 
@@ -685,7 +687,7 @@ Map& GUI::GetCurrentMap()
 {
 	Editor* editor = GetCurrentEditor();
 	ASSERT(editor);
-	return editor->map;
+	return editor->getMap();
 }
 
 int GUI::GetOpenMapCount()
@@ -704,17 +706,9 @@ int GUI::GetOpenMapCount()
 
 bool GUI::ShouldSave()
 {
-	const Map& map = GetCurrentMap();
-	if(map.hasChanged()) {
-		if(map.getTileCount() == 0) {
-			Editor* editor = GetCurrentEditor();
-			ASSERT(editor);
-			return editor->actionQueue->canUndo();
-		}
-		return true;
-	}
-	return false;
-
+	Editor* editor = GetCurrentEditor();
+	ASSERT(editor);
+	return editor->hasChanges();
 }
 
 void GUI::AddPendingCanvasEvent(wxEvent& event)
@@ -877,6 +871,39 @@ void GUI::LoadPerspective()
 			}
 		}
 
+		if(g_settings.getInteger(Config::ACTIONS_HISTORY_VISIBLE)) {
+			if(!actions_history_window) {
+				wxAuiPaneInfo info;
+
+				const wxString& data = wxstr(g_settings.getString(Config::ACTIONS_HISTORY_LAYOUT));
+				aui_manager->LoadPaneInfo(data, info);
+
+				actions_history_window = new ActionsHistoryWindow(root);
+				aui_manager->AddPane(actions_history_window, info);
+			} else {
+				wxAuiPaneInfo& info = aui_manager->GetPane(actions_history_window);
+				const wxString& data = wxstr(g_settings.getString(Config::ACTIONS_HISTORY_LAYOUT));
+				aui_manager->LoadPaneInfo(data, info);
+			}
+
+			wxAuiPaneInfo& info = aui_manager->GetPane(actions_history_window);
+			if(info.IsFloatable()) {
+				bool offscreen = true;
+				for(uint32_t index = 0; index < wxDisplay::GetCount(); ++index) {
+					wxDisplay display(index);
+					wxRect rect = display.GetClientArea();
+					if(rect.Contains(info.floating_pos)) {
+						offscreen = false;
+						break;
+					}
+				}
+
+				if(offscreen) {
+					info.Dock();
+				}
+			}
+		}
+
 		aui_manager->Update();
 		root->UpdateMenubar();
 	}
@@ -889,8 +916,8 @@ void GUI::SavePerspective()
 	g_settings.setInteger(Config::WINDOW_MAXIMIZED, root->IsMaximized());
 	g_settings.setInteger(Config::WINDOW_WIDTH, root->GetSize().GetWidth());
 	g_settings.setInteger(Config::WINDOW_HEIGHT, root->GetSize().GetHeight());
-
 	g_settings.setInteger(Config::MINIMAP_VISIBLE, minimap? 1: 0);
+	g_settings.setInteger(Config::ACTIONS_HISTORY_VISIBLE, actions_history_window ? 1 : 0);
 
 	wxString pinfo;
 	for (auto &palette : palettes) {
@@ -902,6 +929,11 @@ void GUI::SavePerspective()
 	if(minimap) {
 		wxString s = aui_manager->SavePaneInfo(aui_manager->GetPane(minimap));
 		g_settings.setString(Config::MINIMAP_LAYOUT, nstr(s));
+	}
+
+	if(actions_history_window) {
+		wxString info = aui_manager->SavePaneInfo(aui_manager->GetPane(actions_history_window));
+		g_settings.setString(Config::ACTIONS_HISTORY_LAYOUT, nstr(info));
 	}
 
 	root->GetAuiToolBar()->SavePerspective();
@@ -927,6 +959,28 @@ SearchResultWindow* GUI::ShowSearchWindow()
 	return search_result_window;
 }
 
+ActionsHistoryWindow* GUI::ShowActionsWindow()
+{
+	if(!actions_history_window) {
+		actions_history_window = new ActionsHistoryWindow(root);
+		aui_manager->AddPane(actions_history_window, wxAuiPaneInfo().Caption("Actions History"));
+	} else {
+		aui_manager->GetPane(actions_history_window).Show();
+	}
+
+	aui_manager->Update();
+	actions_history_window->RefreshActions();
+	return actions_history_window;
+}
+
+void GUI::HideActionsWindow()
+{
+	if(actions_history_window) {
+		aui_manager->GetPane(actions_history_window).Show(false);
+		aui_manager->Update();
+	}
+}
+
 //=============================================================================
 // Palette Window Interface implementation
 
@@ -948,6 +1002,8 @@ void GUI::RefreshPalettes(Map* m, bool usedefault)
 		palette->OnUpdate(m? m : (usedefault? (IsEditorOpen()? &GetCurrentMap() : nullptr): nullptr));
 	}
 	SelectBrush();
+
+	RefreshActions();
 }
 
 void GUI::RefreshOtherPalettes(PaletteWindow* p)
@@ -1243,11 +1299,11 @@ void GUI::UpdateMenubar()
 	root->UpdateMenubar();
 }
 
-void GUI::SetScreenCenterPosition(Position position)
+void GUI::SetScreenCenterPosition(const Position& position, bool showIndicator)
 {
 	MapTab* mapTab = GetCurrentMapTab();
 	if(mapTab)
-		mapTab->SetScreenCenterPosition(position);
+		mapTab->SetScreenCenterPosition(position, showIndicator);
 }
 
 void GUI::DoCut()
@@ -1290,9 +1346,10 @@ void GUI::PreparePaste()
 	Editor* editor = GetCurrentEditor();
 	if (editor) {
 		SetSelectionMode();
-		editor->selection.start();
-		editor->selection.clear();
-		editor->selection.finish();
+		Selection& selection = editor->getSelection();
+		selection.start();
+		selection.clear();
+		selection.finish();
 		StartPasting();
 		RefreshView();
 	}
@@ -1317,21 +1374,21 @@ void GUI::EndPasting()
 bool GUI::CanUndo()
 {
 	Editor* editor = GetCurrentEditor();
-	return (editor && editor->actionQueue->canUndo());
+	return (editor && editor->canUndo());
 }
 
 bool GUI::CanRedo()
 {
 	Editor* editor = GetCurrentEditor();
-	return (editor && editor->actionQueue->canRedo());
+	return (editor && editor->canRedo());
 }
 
 bool GUI::DoUndo()
 {
 	Editor* editor = GetCurrentEditor();
-	if(editor && editor->actionQueue->canUndo()) {
-		editor->actionQueue->undo();
-		if(editor->selection.size() > 0)
+	if(editor && editor->canUndo()) {
+		editor->undo();
+		if(editor->hasSelection())
 			SetSelectionMode();
 		SetStatusText("Undo action");
 		UpdateMinimap();
@@ -1345,9 +1402,9 @@ bool GUI::DoUndo()
 bool GUI::DoRedo()
 {
 	Editor* editor = GetCurrentEditor();
-	if(editor && editor->actionQueue->canRedo()) {
-		editor->actionQueue->redo();
-		if(editor->selection.size() > 0)
+	if(editor && editor->canRedo()) {
+		editor->redo();
+		if(editor->hasSelection())
 			SetSelectionMode();
 		SetStatusText("Redo action");
 		UpdateMinimap();
@@ -1370,7 +1427,7 @@ void GUI::ChangeFloor(int new_floor)
 	MapTab* tab = GetCurrentMapTab();
 	if(tab) {
 		int old_floor = GetCurrentFloor();
-		if(new_floor < 0 || new_floor > MAP_MAX_LAYER)
+		if(new_floor < rme::MapMinLayer || new_floor > rme::MapMaxLayer)
 			return;
 
 		if(old_floor != new_floor)
@@ -1442,6 +1499,18 @@ void GUI::UpdateMenus()
 	g_gui.root->AddPendingEvent(evt);
 }
 
+void GUI::UpdateActions()
+{
+	wxCommandEvent evt(EVT_UPDATE_ACTIONS);
+	g_gui.root->AddPendingEvent(evt);
+}
+
+void GUI::RefreshActions()
+{
+	if(actions_history_window)
+		actions_history_window->RefreshActions();
+}
+
 void GUI::ShowToolbar(ToolBarID id, bool show)
 {
 	if (root && root->GetAuiToolBar())
@@ -1478,14 +1547,16 @@ void GUI::SetDrawingMode()
 	std::set<MapTab*> al;
 	for(int idx = 0; idx < tabbook->GetTabCount(); ++idx) {
 		EditorTab* editorTab = tabbook->GetTab(idx);
-		if(auto * mapTab = dynamic_cast<MapTab*>(editorTab)) {
+		if(MapTab* mapTab = dynamic_cast<MapTab*>(editorTab)) {
 			if(al.find(mapTab) != al.end())
 				continue;
 
 			Editor* editor = mapTab->GetEditor();
-			editor->selection.start();
-			editor->selection.clear();
-			editor->selection.finish();
+			Selection& selection = editor->getSelection();
+			selection.start(Selection::NONE, ACTION_UNSELECT);
+			selection.clear();
+			selection.finish();
+			selection.updateSelectionCount();
 			al.insert(mapTab);
 		}
 	}
@@ -1765,7 +1836,7 @@ void GUI::FillDoodadPreviewBuffer()
 			// There is a huge deviation here with the other formula.
 			area = 5;
 		} else {
-			area = int(0.5 + GetBrushSize() * GetBrushSize() * PI);
+			area = int(0.5 + GetBrushSize() * GetBrushSize() * rme::PI);
 		}
 	}
 	const int object_range = (use_custom_thickness ? int(area*custom_thickness_mod) : brush->getThickness() * area / std::max(1, brush->getThicknessCeiling()));
