@@ -12,7 +12,7 @@
 	<npc name="Magic Merchant" looktype="130" lookitem="0" lookaddon="3" lookhead="0" lookbody="79" looklegs="90" lookfeet="117" />
 	<npc name="Mailwoman" looktype="1537" lookitem="0" lookaddon="0" lookhead="95" lookbody="62" looklegs="0" lookfeet="79" />
 	<npc name="Task Manager" looktype="144" lookitem="0" lookaddon="3" lookhead="116" lookbody="78" looklegs="94" lookfeet="78" />
-	<npc name="Walter Jaeger" looktype="957" lookitem="0" lookaddon="0" lookhead="78" lookbody="5" looklegs="5" lookfeet="115" />
+	<npc name="Hunting Tasker" looktype="957" lookitem="0" lookaddon="0" lookhead="78" lookbody="5" looklegs="5" lookfeet="115" />
 	<npc name="Golden Merchant" looktype="471" lookitem="0" lookaddon="2" lookhead="0" lookbody="57" looklegs="0" lookfeet="68" />
 	<npc name="Silver Merchant" looktype="128" lookitem="0" lookaddon="3" lookhead="114" lookbody="0" looklegs="76" lookfeet="94" />
 	<npc name="Event Merchant" looktype="1680" lookitem="0" lookaddon="3" lookhead="114" lookbody="0" looklegs="76" lookfeet="94" />
