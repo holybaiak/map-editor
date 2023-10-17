@@ -282,6 +282,7 @@ bool GroundBrush::load(pugi::xml_node node, wxArrayString &warnings) {
 					Brush* tobrush = g_brushes.getBrush(value);
 					if (!tobrush) {
 						warnings.push_back("To brush " + wxstr(value) + " doesn't exist.");
+						delete borderBlock;
 						continue;
 					}
 					borderBlock->to = tobrush->getID();
@@ -441,6 +442,7 @@ bool GroundBrush::load(pugi::xml_node node, wxArrayString &warnings) {
 								ItemType* type = g_items.getRawItemType(with_id);
 								if (!type) {
 									return false;
+									delete specificCaseBlock;
 								}
 
 								type->isBorder = true;
