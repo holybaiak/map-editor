@@ -16,5 +16,5 @@
 	<npc name="Golden Merchant" looktype="471" lookitem="0" lookaddon="2" lookhead="0" lookbody="57" looklegs="0" lookfeet="68" />
 	<npc name="Silver Merchant" looktype="128" lookitem="0" lookaddon="3" lookhead="114" lookbody="0" looklegs="76" lookfeet="94" />
 	<npc name="Event Merchant" looktype="1680" lookitem="0" lookaddon="3" lookhead="114" lookbody="0" looklegs="76" lookfeet="94" />
-	<npc name="Alfa Test" looktype="1680" lookitem="0" lookaddon="3" lookhead="114" lookbody="0" looklegs="76" lookfeet="94" />
+	<npc name="Alfa Test" looktype="1662" lookitem="0" lookaddon="3" lookhead="114" lookbody="0" looklegs="76" lookfeet="94" />
 </npcs>
