@@ -1419,4 +1419,6 @@
 
 	<monster name="Iron Bar" lookitem="8569" />
 	<monster name="Solid Iron Bar" lookitem="8569" />
+	
+	<monster name="Drume" looktype="1317" lookhead="38" lookbody="76" looklegs="57" lookfeet="114" lookaddons="2" />
 </monsters>
