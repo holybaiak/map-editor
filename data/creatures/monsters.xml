@@ -980,7 +980,7 @@
     <monster name="Raxias" looktype="980" lookhead="79" lookbody="114" looklegs="82" lookfeet="79" lookaddons="0" />
     <monster name="Razzagorn" looktype="842" lookhead="78" lookbody="94" looklegs="52" lookfeet="126" lookaddons="0" />
     <monster name="Reality Reaver" looktype="879" />
-    <monster name="Realityquake" looktype="0" />
+    <monster name="Realityquake" lookitem="1949" />
     <monster name="Red Butterfly" looktype="228" />
     <monster name="Redeemed Soul" looktype="714" />
     <monster name="Reflection Of Mawhawk" looktype="595" />
@@ -1199,7 +1199,7 @@
     <monster name="The Enraged Thorn Knight" looktype="512" lookhead="81" lookbody="121" looklegs="121" lookfeet="121" lookaddons="3" />
     <monster name="The Evil Eye" looktype="210" />
     <monster name="The False God" looktype="984" />
-    <monster name="The Fear Feaster" looktype="1061" lookhead="79" lookbody="83" looklegs="113" lookfeet="0" lookaddons="1" />
+    <monster name="The Fear Feaster" looktype="1276" />
     <monster name="The First Dragon" looktype="947" lookhead="94" lookbody="80" looklegs="120" lookfeet="60" lookaddons="3" />
     <monster name="The Freezing Time Guardian" looktype="943" />
     <monster name="The Frog Prince" looktype="224" lookhead="69" lookbody="66" looklegs="69" lookfeet="66" lookaddons="0" />
@@ -1422,4 +1422,8 @@
 	
 	<monster name="Drume" looktype="1317" lookhead="38" lookbody="76" looklegs="57" lookfeet="114" lookaddons="2" />
 	<monster name="Timira the Many-Headed" looktype="1542" lookhead="0" lookbody="0" looklegs="0" lookfeet="0" lookaddons="3" />
+	
+	<monster name="The Unwelcome" looktype="1277" />
+	<monster name="The Dread Maiden" looktype="1278" />
+	<monster name="The Pale Worm" looktype="1272" />
 </monsters>
