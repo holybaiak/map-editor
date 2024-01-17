@@ -1415,7 +1415,8 @@
 	<monster name="Trainer" looktype="1317" lookhead="0" lookbody="78" looklegs="57" lookfeet="57" lookaddons="1" />
 	<monster name="Reward Room" looktype="1059" lookhead="17" lookbody="41" looklegs="77" lookfeet="57" lookaddons="0" />
 	<monster name="Bosses" looktype="1122" lookhead="9" lookbody="10" looklegs="86" lookfeet="79" lookaddons="0" />
-	<monster name="Exclusive Caves" looktype="1143" lookhead="0" lookbody="0" looklegs="0" lookfeet="0" lookaddons="0" />
+	<monster name="Exclusive Caves" looktype="1278" lookhead="0" lookbody="0" looklegs="0" lookfeet="0" lookaddons="0" />
+	<monster name="War Castle" looktype="1276" lookhead="0" lookbody="0" looklegs="0" lookfeet="0" lookaddons="0" />
 
 	<monster name="Iron Bar" lookitem="8569" />
 	<monster name="Solid Iron Bar" lookitem="8569" />

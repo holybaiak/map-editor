@@ -20,4 +20,8 @@
 	<npc name="A Merchant Cyclops" looktype="22" lookitem="0" lookaddon="0" lookhead="0" lookbody="0" looklegs="0" lookfeet="0" />
 
 	<npc name="Alfa Test" looktype="1662" lookitem="0" lookaddon="3" lookhead="114" lookbody="0" looklegs="76" lookfeet="94" />
+
+	<npc name="Top One Highscore" looktype="1662" lookitem="0" lookaddon="0" lookhead="114" lookbody="0" looklegs="76" lookfeet="94" />
+	<npc name="Top Two Highscore" looktype="1662" lookitem="0" lookaddon="0" lookhead="114" lookbody="0" looklegs="76" lookfeet="94" />
+	<npc name="Top Three Highscore" looktype="1662" lookitem="0" lookaddon="0" lookhead="114" lookbody="0" looklegs="76" lookfeet="94" />
 </npcs>
