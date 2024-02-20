@@ -18,6 +18,7 @@
 	<npc name="Event Merchant" looktype="1680" lookitem="0" lookaddon="3" lookhead="114" lookbody="0" looklegs="76" lookfeet="94" />
 	<npc name="Soft Restorer" looktype="128" lookitem="0" lookaddon="3" lookhead="40" lookbody="37" looklegs="116" lookfeet="95" />
 	<npc name="A Merchant Cyclops" looktype="22" lookitem="0" lookaddon="0" lookhead="0" lookbody="0" looklegs="0" lookfeet="0" />
+	<npc name="War Private" looktype="146" lookitem="0" lookaddon="3" lookhead="19" lookbody="19" looklegs="9" lookfeet="58" />
 
 	<npc name="Alfa Test" looktype="1662" lookitem="0" lookaddon="3" lookhead="114" lookbody="0" looklegs="76" lookfeet="94" />
 
