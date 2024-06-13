@@ -3,7 +3,7 @@
 RME usado no projeto Holy Baiak.
 
 ## Repositório Base:
-- Map Editor: [RME](https://github.com/opentibiabr/remeres-map-editor) (Jun 4, 2024, 565 commits)
+- Map Editor: [RME](https://github.com/opentibiabr/remeres-map-editor) (Jun 11, 2024, 571 commits)
 
 ## Compilar:
 - Compilar em solution.
