@@ -474,7 +474,7 @@
     <monster name="Frenzy" looktype="290" />
     <monster name="Frost Dragon Hatchling" looktype="283" />
     <monster name="Frost Dragon" looktype="248" />
-    <monster name="Frost Flower Asura" looktype="150" />
+    <monster name="Frost Flower Asura" looktype="150" lookhead="0" lookbody="0" looklegs="0" lookfeet="86" lookaddons="3" />
     <monster name="Frost Giant" looktype="257" />
     <monster name="Frost Giantess" looktype="265" />
     <monster name="Frost Servant" looktype="261" />
@@ -775,7 +775,7 @@
     <monster name="Metal Gargoyle" looktype="601" />
     <monster name="Mezlon The Defiler Stop" looktype="144" lookhead="1" lookbody="38" looklegs="1" lookfeet="60" lookaddons="0" />
     <monster name="Mezlon The Defiler" looktype="144" lookhead="1" lookbody="38" looklegs="1" lookfeet="60" lookaddons="0" />
-    <monster name="Midnight Asura" looktype="150" />
+    <monster name="Midnight Asura" looktype="150" lookhead="0" lookbody="114" looklegs="90" lookfeet="90" lookaddons="1" />
     <monster name="Midnight Panther" looktype="385" />
     <monster name="Midnight Spawn" looktype="315" />
     <monster name="Mimic" looktype="92" />
@@ -1427,4 +1427,6 @@
 	<monster name="The Unwelcome" looktype="1277" />
 	<monster name="The Dread Maiden" looktype="1278" />
 	<monster name="The Pale Worm" looktype="1272" />
+
+	<monster name="Crypt Warrior" looktype="298" />
 </monsters>
