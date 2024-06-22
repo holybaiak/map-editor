@@ -2473,6 +2473,10 @@ namespace RemoveDuplicatesItems {
 				return false;
 			}
 
+			if (item->getActionID() > 0 || item->getUniqueID() > 0) {
+				return false;
+			}
+
 			std::unordered_set<int> itemIDsDuplicates;
 			for (Item* itemInTile : tile->items) {
 				if (itemInTile && itemInTile->getID() == item->getID()) {
