@@ -60,3 +60,4 @@ vcpkg_installed/
 *.ilk
 remeres.exe.manifest
 remeres
+/tibia
